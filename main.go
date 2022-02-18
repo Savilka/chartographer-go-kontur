@@ -26,5 +26,5 @@ func main() {
 	router.POST("/chartas/?width=:width&height=:height", createChartaEndpoint)
 	router.GET("/chartas/:id/?x=:x&y=:y&width=:width&height=:height", addFragmentEndpoint)
 	router.POST("/chartas/:id/?x=:x&y=:y&width=:width&height=:height", getFragmentEndpoint)
-	router.DELETE("/chartas/:id/?x=:x&y=:y&width=:width&height=:height", deleteChartaEndpoint)
+	router.DELETE("/chartas/:id/", deleteChartaEndpoint)
 }
