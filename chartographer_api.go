@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	bolt "go.etcd.io/bbolt"
 	"golang.org/x/image/bmp"
-	"golang.org/x/image/draw"
 	"image"
+	"image/draw"
 	"log"
 	"net/http"
 	"os"
@@ -170,19 +170,21 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 			if x < 0 {
 				if fragment.Width-x >= charta.Width {
 					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, 0, charta.Width, fragment.Height+y))
-					draw.Draw(fragmentImgBg, image.Rect(-x, -y, charta.Width, fragment.Height+y),
-						fragmentOfChartaImg, image.Pt(0, 0), draw.Src)
+					draw.Draw(fragmentImgBg, image.Rectangle{
+						Min: image.Point{X: -x, Y: -y},
+						Max: image.Point{X: -x + fragment.Width, Y: fragment.Height},
+					}, fragmentOfChartaImg, image.Point{0, 0}, draw.Src)
 
 				} else {
-					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, 0, fragment.Width+x, fragment.Height+y))
+					//fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, 0, fragment.Width+x, fragment.Height+y))
 					//draw.Draw(fragmentImgBg, image.Rect())
 				}
 			} else {
 				if x+fragment.Width >= charta.Width {
-					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, charta.Width-x, fragment.Height+y))
+					//fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, charta.Width-x, fragment.Height+y))
 					//draw.Draw(fragmentImgBg, image.Rect())
 				} else {
-					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, fragment.Width+x, fragment.Height+y))
+					//fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, fragment.Width+x, fragment.Height+y))
 					//draw.Draw(fragmentImgBg, image.Rect())
 				}
 			}
