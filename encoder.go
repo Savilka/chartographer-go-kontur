@@ -25,7 +25,7 @@ type header struct {
 	colorImportant  uint32
 }
 
-func encodeNRGBA(w io.Writer, pix []uint8, dx, dy, stride, step int, opaque bool) error {
+func encodeNRGBA(w io.Writer, pix []uint8, dx, dy, stride, step int) error {
 	buf := make([]byte, step)
 	for y := dy - 1; y >= 0; y-- {
 		min := y*stride + 0
@@ -63,7 +63,6 @@ func Encode(w io.Writer, m *image.NRGBA) error {
 
 	var step int
 	var palette []byte
-	var opaque bool
 
 	step = (3*d.X + 3) &^ 3
 	h.bpp = 24
@@ -84,5 +83,5 @@ func Encode(w io.Writer, m *image.NRGBA) error {
 		return nil
 	}
 
-	return encodeNRGBA(w, m.Pix, d.X, d.Y, m.Stride, step, opaque)
+	return encodeNRGBA(w, m.Pix, d.X, d.Y, m.Stride, step)
 }

@@ -173,11 +173,13 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 					draw.Draw(fragmentImgBg, image.Rectangle{
 						Min: image.Point{X: -x, Y: -y},
 						Max: image.Point{X: -x + fragment.Width, Y: fragment.Height},
-					}, fragmentOfChartaImg, image.Point{0, 0}, draw.Src)
-
+					}, fragmentOfChartaImg, image.Point{}, draw.Src)
 				} else {
-					//fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, 0, fragment.Width+x, fragment.Height+y))
-					//draw.Draw(fragmentImgBg, image.Rect())
+					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, 0, charta.Width+x, fragment.Height+y))
+					draw.Draw(fragmentImgBg, image.Rectangle{
+						Min: image.Point{X: -x, Y: -y},
+						Max: image.Point{X: -x + fragment.Width, Y: fragment.Height},
+					}, fragmentOfChartaImg, image.Point{}, draw.Src)
 				}
 			} else {
 				if x+fragment.Width >= charta.Width {
