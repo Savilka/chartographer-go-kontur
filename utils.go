@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"github.com/gin-gonic/gin"
 	"image"
 	"image/color"
+	"strconv"
 )
 
 func createBlackImage(width, height int) *image.NRGBA {
@@ -14,4 +17,16 @@ func createBlackImage(width, height int) *image.NRGBA {
 	}
 
 	return out
+}
+
+func writeBmpIntoTheBody(fragmentImgBg *image.NRGBA, c *gin.Context) error {
+	buf := new(bytes.Buffer)
+	err := Encode(buf, fragmentImgBg)
+	if err != nil {
+		return err
+	}
+
+	c.Header("Content-Length", strconv.Itoa(len(buf.Bytes())))
+	c.Data(200, "image/bmp", buf.Bytes())
+	return nil
 }

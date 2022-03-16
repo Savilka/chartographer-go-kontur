@@ -104,7 +104,7 @@ func (cs *ChartographerService) createChartaEndpoint(c *gin.Context) {
 	}
 }
 
-func (cs *ChartographerService) addFragmentEndpoint(*gin.Context) {
+func (cs *ChartographerService) addFragmentEndpoint(c *gin.Context) {
 }
 
 func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
@@ -145,11 +145,12 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 		var fragmentImgBg *image.NRGBA
 
 		switch {
+		//2, 3, 4, 5
 		case y+fragment.Height <= 0 || x+fragment.Width <= 0 ||
 			y >= charta.Height || x >= charta.Width:
 			c.AbortWithStatus(http.StatusBadRequest)
 			return nil
-
+		//1
 		case x >= 0 && y >= 0 &&
 			x+fragment.Width <= charta.Width && y+fragment.Height <= charta.Height:
 			fragmentImg := imaging.Crop(chartaImg, image.Rect(x, y, fragment.Width+x, fragment.Height+y))
@@ -183,25 +184,26 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 				}
 			} else {
 				if x+fragment.Width >= charta.Width {
-					//fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, charta.Width-x, fragment.Height+y))
-					//draw.Draw(fragmentImgBg, image.Rect())
+					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, charta.Width, fragment.Height+y))
+					draw.Draw(fragmentImgBg, image.Rectangle{
+						Min: image.Point{X: 0, Y: -y},
+						Max: image.Point{X: charta.Width + x, Y: fragment.Height},
+					}, fragmentOfChartaImg, image.Point{}, draw.Src)
 				} else {
-					//fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, fragment.Width+x, fragment.Height+y))
-					//draw.Draw(fragmentImgBg, image.Rect())
+					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, fragment.Width+x, fragment.Height+y))
+					draw.Draw(fragmentImgBg, image.Rectangle{
+						Min: image.Point{X: 0, Y: -y},
+						Max: image.Point{X: fragment.Width, Y: fragment.Height},
+					}, fragmentOfChartaImg, image.Point{}, draw.Src)
 				}
 			}
-			filename := fmt.Sprintf("chartas/%sdsfasf.bmp", charta.Id)
-			file, err := os.Create(filename)
-			if err != nil {
-				return err
-			}
-			err = Encode(file, fragmentImgBg)
-			if err != nil {
-				return err
-			}
-			_ = file.Close()
 
+			err := writeBmpIntoTheBody(fragmentImgBg, c)
+			if err != nil {
+				return err
+			}
 		}
+		//
 
 		return nil
 	})
