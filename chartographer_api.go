@@ -145,31 +145,23 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 		var fragmentImgBg *image.NRGBA
 
 		switch {
-		//2, 3, 4, 5
-		case y+fragment.Height <= 0 || x+fragment.Width <= 0 ||
-			y >= charta.Height || x >= charta.Width:
-			c.AbortWithStatus(http.StatusBadRequest)
-			return nil
-		//1
-		case x >= 0 && y >= 0 &&
-			x+fragment.Width <= charta.Width && y+fragment.Height <= charta.Height:
-			fragmentImg := imaging.Crop(chartaImg, image.Rect(x, y, fragment.Width+x, fragment.Height+y))
-			filename := fmt.Sprintf("chartas/%sccc.bmp", charta.Id)
-			file, err := os.Create(filename)
-			if err != nil {
-				return err
+		case x < 0 && y < 0:
+			if fragment.Width <= -x || fragment.Width <= -y {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return nil
 			}
-			err = Encode(file, fragmentImg)
-			if err != nil {
-				return err
-			}
-			_ = file.Close()
-		//15, 10, 11, 6
-		case y < 0 && y+fragment.Height > 0:
-			fragmentImgBg = createBlackImage(fragment.Width, fragment.Height)
 
-			if x < 0 {
-				if fragment.Width-x >= charta.Width {
+			fragmentImgBg = createBlackImage(fragment.Width, fragment.Height)
+			//14
+			if fragment.Width-x >= charta.Width && fragment.Height-y >= charta.Height {
+				draw.Draw(fragmentImgBg, image.Rectangle{
+					Min: image.Point{X: -x, Y: -y},
+					Max: image.Point{X: -x + fragment.Width, Y: -y + fragment.Height},
+				}, chartaImg, image.Point{}, draw.Src)
+			}
+			//(15 and 10) and 16
+			if fragment.Height+y <= charta.Height {
+				if fragment.Width-x > charta.Width {
 					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, 0, charta.Width, fragment.Height+y))
 					draw.Draw(fragmentImgBg, image.Rectangle{
 						Min: image.Point{X: -x, Y: -y},
@@ -183,7 +175,26 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 					}, fragmentOfChartaImg, image.Point{}, draw.Src)
 				}
 			} else {
-				if x+fragment.Width >= charta.Width {
+				fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, 0, fragment.Width+x, fragment.Height))
+				draw.Draw(fragmentImgBg, image.Rectangle{
+					Min: image.Point{X: -x, Y: -y},
+					Max: image.Point{X: fragment.Width, Y: charta.Height - y},
+				}, fragmentOfChartaImg, image.Point{}, draw.Src)
+			}
+			err := writeBmpIntoTheBody(fragmentImgBg, c)
+			if err != nil {
+				return err
+			}
+
+		case x >= 0 && y < 0:
+			if fragment.Height <= -y || charta.Width <= x {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return nil
+			}
+			fragmentImgBg = createBlackImage(fragment.Width, fragment.Height)
+			//(11 and 6) and 18
+			if fragment.Height+y <= charta.Height {
+				if x+fragment.Width > charta.Width {
 					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, charta.Width, fragment.Height+y))
 					draw.Draw(fragmentImgBg, image.Rectangle{
 						Min: image.Point{X: 0, Y: -y},
@@ -196,14 +207,98 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 						Max: image.Point{X: fragment.Width, Y: fragment.Height},
 					}, fragmentOfChartaImg, image.Point{}, draw.Src)
 				}
+			} else {
+				fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, charta.Width, charta.Height))
+				draw.Draw(fragmentImgBg, image.Rectangle{
+					Min: image.Point{X: 0, Y: -y},
+					Max: image.Point{X: charta.Width - x, Y: charta.Height - y},
+				}, fragmentOfChartaImg, image.Point{}, draw.Src)
 			}
 
 			err := writeBmpIntoTheBody(fragmentImgBg, c)
 			if err != nil {
 				return err
 			}
+
+		case x < 0 && y >= 0:
+			if fragment.Width <= -x || charta.Height <= y {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return nil
+			}
+
+			fragmentImgBg = createBlackImage(fragment.Width, fragment.Height)
+			//(12 and 7) and 17
+			if fragment.Width+x <= charta.Width {
+				if fragment.Height+y >= charta.Height {
+					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, y, fragment.Width+x, charta.Height))
+					draw.Draw(fragmentImgBg, image.Rectangle{
+						Min: image.Point{X: -x, Y: 0},
+						Max: image.Point{X: fragment.Width, Y: charta.Height - y},
+					}, fragmentOfChartaImg, image.Point{}, draw.Src)
+				} else {
+					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, y, fragment.Width+x, fragment.Height+y))
+					draw.Draw(fragmentImgBg, image.Rectangle{
+						Min: image.Point{X: -x, Y: 0},
+						Max: image.Point{X: fragment.Width, Y: fragment.Height},
+					}, fragmentOfChartaImg, image.Point{}, draw.Src)
+				}
+			} else {
+				fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, y, charta.Width, charta.Height))
+				draw.Draw(fragmentImgBg, image.Rectangle{
+					Min: image.Point{X: -x, Y: 0},
+					Max: image.Point{X: charta.Width - x, Y: charta.Height - y},
+				}, fragmentOfChartaImg, image.Point{}, draw.Src)
+			}
+
+			err := writeBmpIntoTheBody(fragmentImgBg, c)
+			if err != nil {
+				return err
+			}
+
+		case x >= 0 && y >= 0:
+			if x >= charta.Width || y >= charta.Height {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return nil
+			}
+
+			fragmentImgBg = createBlackImage(fragment.Width, fragment.Height)
+
+			if fragment.Width+x <= charta.Width && fragment.Height+y <= charta.Height {
+				fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, y, fragment.Width+x, fragment.Height+y))
+				draw.Draw(fragmentImgBg, image.Rectangle{
+					Min: image.Point{X: 0, Y: 0},
+					Max: image.Point{X: fragment.Width, Y: fragment.Height},
+				}, fragmentOfChartaImg, image.Point{}, draw.Src)
+			} else {
+				if fragment.Width+x >= charta.Width && fragment.Height+y >= charta.Height {
+					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, y, charta.Width, charta.Height))
+					draw.Draw(fragmentImgBg, image.Rectangle{
+						Min: image.Point{X: 0, Y: 0},
+						Max: image.Point{X: charta.Width - x, Y: charta.Height - y},
+					}, fragmentOfChartaImg, image.Point{}, draw.Src)
+				} else {
+					if fragment.Width+x >= charta.Width {
+						fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, y, fragment.Width, fragment.Height+y))
+						draw.Draw(fragmentImgBg, image.Rectangle{
+							Min: image.Point{X: 0, Y: 0},
+							Max: image.Point{X: charta.Width - x, Y: fragment.Height},
+						}, fragmentOfChartaImg, image.Point{}, draw.Src)
+					} else {
+						fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, y, fragment.Width+x, fragment.Height))
+						draw.Draw(fragmentImgBg, image.Rectangle{
+							Min: image.Point{X: 0, Y: 0},
+							Max: image.Point{X: fragment.Width, Y: charta.Height - x},
+						}, fragmentOfChartaImg, image.Point{}, draw.Src)
+					}
+				}
+			}
+
+			err := writeBmpIntoTheBody(fragmentImgBg, c)
+			if err != nil {
+				return err
+			}
+
 		}
-		//
 
 		return nil
 	})
