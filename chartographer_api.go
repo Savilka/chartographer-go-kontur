@@ -38,9 +38,9 @@ func (cs *ChartographerService) Run(addr string) {
 	log.Fatal(http.ListenAndServe(addr, cs.Router))
 }
 
-func (cs *ChartographerService) Initialize() {
+func (cs *ChartographerService) Initialize(dbName string) {
 	var err error
-	cs.DB, err = bolt.Open("chartas.db", 0600, nil)
+	cs.DB, err = bolt.Open(dbName, 0600, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
