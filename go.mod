@@ -1,4 +1,4 @@
-module chartographer-go-kontur
+module github.com/savilka/chartographer-go-kontur
 
 go 1.18
 
@@ -29,5 +29,3 @@ require (
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
-
-replace internshipApplicationTemplate => ./chartographer-go-kontur
