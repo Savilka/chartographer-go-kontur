@@ -94,7 +94,7 @@ func (cs *ChartographerService) createChartaEndpoint(c *gin.Context) {
 			CompressionLevel: png.NoCompression,
 		}
 
-		err = enc.Encode(file, chartaImg)
+		err = enc.Encode(file, &chartaImg)
 		if err != nil {
 			return err
 		}
@@ -231,7 +231,7 @@ func (cs *ChartographerService) addFragmentEndpoint(c *gin.Context) {
 				}
 			} else {
 				//case 14 and 15
-				fragmentOfFragmentImg = imaging.Crop(fragmentImg, image.Rect(0, -y, charta.Width, charta.Height))
+				fragmentOfFragmentImg = imaging.Crop(fragmentImg, image.Rect(0, -y, fragment.Width, charta.Height-y))
 				draw.Draw(chartaImg, image.Rectangle{
 					Min: image.Point{X: x, Y: 0},
 					Max: image.Point{X: charta.Width, Y: charta.Height},
@@ -257,7 +257,7 @@ func (cs *ChartographerService) addFragmentEndpoint(c *gin.Context) {
 					break
 				} else {
 					//case 16
-					fragmentOfFragmentImg = imaging.Crop(fragmentImg, image.Rect(-x, 0, fragment.Width, fragment.Height-y))
+					fragmentOfFragmentImg = imaging.Crop(fragmentImg, image.Rect(-x, 0, fragment.Width, fragment.Height))
 					draw.Draw(chartaImg, image.Rectangle{
 						Min: image.Point{X: 0, Y: y},
 						Max: image.Point{X: fragment.Width + x, Y: fragment.Height + y},
@@ -373,7 +373,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 		}
 
 		var fragmentOfChartaImg *image.NRGBA
-		var fragmentImgBg *image.NRGBA
+		var fragmentImgBg image.NRGBA
 		fragmentImgBg = createBlackImage(fragment.Width, fragment.Height)
 
 		switch {
@@ -386,7 +386,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 
 			//case 24
 			if fragment.Width-x >= charta.Width && fragment.Height-y >= charta.Height {
-				draw.Draw(fragmentImgBg, image.Rectangle{
+				draw.Draw(&fragmentImgBg, image.Rectangle{
 					Min: image.Point{X: -x, Y: -y},
 					Max: image.Point{X: -x + charta.Width, Y: -y + charta.Height},
 				}, chartaImg, image.Point{}, draw.Over)
@@ -397,7 +397,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 				if fragment.Width-x > charta.Width {
 					//case 11
 					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, 0, charta.Width, fragment.Height+y))
-					draw.Draw(fragmentImgBg, image.Rectangle{
+					draw.Draw(&fragmentImgBg, image.Rectangle{
 						Min: image.Point{X: -x, Y: -y},
 						Max: image.Point{X: -x + fragment.Width, Y: fragment.Height},
 					}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -405,7 +405,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 				} else {
 					//case 9
 					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, 0, charta.Width+x, fragment.Height+y))
-					draw.Draw(fragmentImgBg, image.Rectangle{
+					draw.Draw(&fragmentImgBg, image.Rectangle{
 						Min: image.Point{X: -x, Y: -y},
 						Max: image.Point{X: -x + fragment.Width, Y: fragment.Height},
 					}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -414,7 +414,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 			} else {
 				//case 10
 				fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, 0, fragment.Width+x, fragment.Height))
-				draw.Draw(fragmentImgBg, image.Rectangle{
+				draw.Draw(&fragmentImgBg, image.Rectangle{
 					Min: image.Point{X: -x, Y: -y},
 					Max: image.Point{X: fragment.Width, Y: charta.Height - y},
 				}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -432,7 +432,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 				if x+fragment.Width > charta.Width {
 					//case 13
 					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, charta.Width, fragment.Height+y))
-					draw.Draw(fragmentImgBg, image.Rectangle{
+					draw.Draw(&fragmentImgBg, image.Rectangle{
 						Min: image.Point{X: 0, Y: -y},
 						Max: image.Point{X: charta.Width - x, Y: fragment.Height},
 					}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -440,7 +440,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 				} else {
 					//case 12
 					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, fragment.Width+x, fragment.Height+y))
-					draw.Draw(fragmentImgBg, image.Rectangle{
+					draw.Draw(&fragmentImgBg, image.Rectangle{
 						Min: image.Point{X: 0, Y: -y},
 						Max: image.Point{X: fragment.Width, Y: fragment.Height},
 					}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -449,7 +449,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 			} else {
 				//case 14 and 15
 				fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, charta.Width, charta.Height))
-				draw.Draw(fragmentImgBg, image.Rectangle{
+				draw.Draw(&fragmentImgBg, image.Rectangle{
 					Min: image.Point{X: 0, Y: -y},
 					Max: image.Point{X: charta.Width - x, Y: charta.Height - y},
 				}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -467,7 +467,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 				if fragment.Height+y >= charta.Height {
 					//case 17
 					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, y, fragment.Width+x, charta.Height))
-					draw.Draw(fragmentImgBg, image.Rectangle{
+					draw.Draw(&fragmentImgBg, image.Rectangle{
 						Min: image.Point{X: -x, Y: 0},
 						Max: image.Point{X: fragment.Width, Y: charta.Height - y},
 					}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -475,7 +475,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 				} else {
 					//case 16
 					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, y, fragment.Width+x, fragment.Height+y))
-					draw.Draw(fragmentImgBg, image.Rectangle{
+					draw.Draw(&fragmentImgBg, image.Rectangle{
 						Min: image.Point{X: -x, Y: 0},
 						Max: image.Point{X: fragment.Width, Y: fragment.Height},
 					}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -484,7 +484,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 			} else {
 				//case 18 and 19
 				fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(0, y, charta.Width, charta.Height))
-				draw.Draw(fragmentImgBg, image.Rectangle{
+				draw.Draw(&fragmentImgBg, image.Rectangle{
 					Min: image.Point{X: -x, Y: 0},
 					Max: image.Point{X: charta.Width - x, Y: charta.Height - y},
 				}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -501,7 +501,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 			//case 20
 			if fragment.Width+x <= charta.Width && fragment.Height+y <= charta.Height {
 				fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, y, fragment.Width+x, fragment.Height+y))
-				draw.Draw(fragmentImgBg, image.Rectangle{
+				draw.Draw(&fragmentImgBg, image.Rectangle{
 					Min: image.Point{X: 0, Y: 0},
 					Max: image.Point{X: fragment.Width, Y: fragment.Height},
 				}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -510,7 +510,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 				if fragment.Width+x >= charta.Width && fragment.Height+y >= charta.Height {
 					//case 23
 					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, y, charta.Width, charta.Height))
-					draw.Draw(fragmentImgBg, image.Rectangle{
+					draw.Draw(&fragmentImgBg, image.Rectangle{
 						Min: image.Point{X: 0, Y: 0},
 						Max: image.Point{X: charta.Width - x, Y: charta.Height - y},
 					}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -519,7 +519,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 					if fragment.Width+x >= charta.Width {
 						//case 21
 						fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, y, fragment.Width, fragment.Height+y))
-						draw.Draw(fragmentImgBg, image.Rectangle{
+						draw.Draw(&fragmentImgBg, image.Rectangle{
 							Min: image.Point{X: 0, Y: 0},
 							Max: image.Point{X: charta.Width - x, Y: fragment.Height},
 						}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -527,7 +527,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 					} else {
 						//case 22
 						fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, y, fragment.Width+x, fragment.Height))
-						draw.Draw(fragmentImgBg, image.Rectangle{
+						draw.Draw(&fragmentImgBg, image.Rectangle{
 							Min: image.Point{X: 0, Y: 0},
 							Max: image.Point{X: fragment.Width, Y: charta.Height - x},
 						}, fragmentOfChartaImg, image.Point{}, draw.Over)
@@ -538,7 +538,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 
 		}
 
-		err = writeBmpIntoTheBody(fragmentImgBg, c)
+		err = writeBmpIntoTheBody(&fragmentImgBg, c)
 		if err != nil {
 			return err
 		}
