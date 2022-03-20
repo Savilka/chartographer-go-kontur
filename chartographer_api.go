@@ -17,8 +17,9 @@ import (
 )
 
 type ChartographerService struct {
-	Router *gin.Engine
-	DB     *bolt.DB
+	Router   *gin.Engine
+	DB       *bolt.DB
+	pathName string
 }
 
 type Charta struct {
@@ -38,9 +39,11 @@ func (cs *ChartographerService) Run(addr string) {
 	log.Fatal(http.ListenAndServe(addr, cs.Router))
 }
 
-func (cs *ChartographerService) Initialize(dbName string) {
+func (cs *ChartographerService) Initialize(path, dbName string) {
 	var err error
-	cs.DB, err = bolt.Open(dbName, 0600, nil)
+	cs.pathName = path
+	db := fmt.Sprintf("%s/%s", path, dbName)
+	cs.DB, err = bolt.Open(db, 0600, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -82,7 +85,7 @@ func (cs *ChartographerService) createChartaEndpoint(c *gin.Context) {
 		newCharta.Id = strconv.Itoa(int(id))
 
 		chartaImg := createBlackImage(newCharta.Width, newCharta.Height)
-		filename := fmt.Sprintf("chartas/%s.png", newCharta.Id)
+		filename := fmt.Sprintf("%s/chartas/%s.png", cs.pathName, newCharta.Id)
 		file, err := os.Create(filename)
 		if err != nil {
 			return err
@@ -102,11 +105,13 @@ func (cs *ChartographerService) createChartaEndpoint(c *gin.Context) {
 			return err
 		}
 
+		c.String(http.StatusCreated, newCharta.Id)
 		return b.Put([]byte(newCharta.Id), buf)
 	})
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
+
 }
 
 func (cs *ChartographerService) addFragmentEndpoint(c *gin.Context) {
@@ -133,7 +138,7 @@ func (cs *ChartographerService) addFragmentEndpoint(c *gin.Context) {
 			return err
 		}
 
-		filename := fmt.Sprintf("chartas/%s.png", charta.Id)
+		filename := fmt.Sprintf("%s/chartas/%s.png", cs.pathName, charta.Id)
 		chartaImgPng, err := os.OpenFile(filename, os.O_RDWR, 0644)
 		if err != nil {
 			return err
@@ -357,12 +362,12 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 			return err
 		}
 
-		filename := fmt.Sprintf("chartas/%s.png", charta.Id)
-		chartaImgBmp, err := os.Open(filename)
+		filename := fmt.Sprintf("%s/chartas/%s.png", cs.pathName, charta.Id)
+		chartaImgPng, err := os.Open(filename)
 		if err != nil {
 			return err
 		}
-		chartaImg, err := png.Decode(chartaImgBmp)
+		chartaImg, err := png.Decode(chartaImgPng)
 		if err != nil {
 			return err
 		}
@@ -552,7 +557,7 @@ func (cs *ChartographerService) deleteChartaEndpoint(c *gin.Context) {
 
 	err := cs.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("chartas"))
-		filename := fmt.Sprintf("chartas/%s.bmp", id)
+		filename := fmt.Sprintf("%s/chartas/%s.png", cs.pathName, id)
 		err := os.Remove(filename)
 		if err != nil {
 			return err
@@ -564,5 +569,5 @@ func (cs *ChartographerService) deleteChartaEndpoint(c *gin.Context) {
 		return
 	}
 
-	c.AbortWithStatus(200)
+	c.Status(http.StatusOK)
 }
