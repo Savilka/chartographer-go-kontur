@@ -47,6 +47,8 @@ func (cs *ChartographerService) Initialize(path, dbName string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	_ = os.Mkdir(cs.pathName+"/chartas", 0644)
+
 	err = cs.DB.Update(func(tx *bolt.Tx) error {
 		_, err = tx.CreateBucketIfNotExists([]byte("chartas"))
 		if err != nil {
@@ -59,9 +61,7 @@ func (cs *ChartographerService) Initialize(path, dbName string) {
 	}
 
 	cs.Router = gin.Default()
-
 	cs.initEndpoints()
-
 }
 
 func (cs *ChartographerService) initEndpoints() {
@@ -90,14 +90,15 @@ func (cs *ChartographerService) createChartaEndpoint(c *gin.Context) {
 		if err != nil {
 			return err
 		}
+
 		enc := &png.Encoder{
 			CompressionLevel: png.NoCompression,
 		}
-
 		err = enc.Encode(file, &chartaImg)
 		if err != nil {
 			return err
 		}
+
 		_ = file.Close()
 
 		buf, err := json.Marshal(newCharta)
@@ -371,6 +372,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 		if err != nil {
 			return err
 		}
+		_ = chartaImgPng.Close()
 
 		var fragmentOfChartaImg *image.NRGBA
 		var fragmentImgBg image.NRGBA
@@ -535,7 +537,6 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 					}
 				}
 			}
-
 		}
 
 		err = writeBmpIntoTheBody(&fragmentImgBg, c)
@@ -549,7 +550,6 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-
 }
 
 func (cs *ChartographerService) deleteChartaEndpoint(c *gin.Context) {

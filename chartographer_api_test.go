@@ -506,6 +506,11 @@ func TestAddFragmentEndpoint(t *testing.T) {
 		eqCode := compareBmp(bufLocal.Bytes(), responseGet.Body.Bytes())
 		assert.Equal(t, 0, eqCode)
 
+		url = fmt.Sprintf("/chartas/%s/", id)
+		req, _ = http.NewRequest("DELETE", url, nil)
+		responseDelete := httptest.NewRecorder()
+		cs.Router.ServeHTTP(responseDelete, req)
+		assert.Equal(t, http.StatusOK, responseDelete.Code)
 	}
 
 	url := fmt.Sprintf("/chartas/?width=%d&height=%d", 100, 100)
@@ -527,6 +532,18 @@ func TestAddFragmentEndpoint(t *testing.T) {
 		response := httptest.NewRecorder()
 		cs.Router.ServeHTTP(response, req)
 		assert.Equal(t, http.StatusBadRequest, response.Code)
+	}
+
+	url = fmt.Sprintf("/chartas/%s/", id)
+	req, _ = http.NewRequest("DELETE", url, nil)
+	responseDelete := httptest.NewRecorder()
+	cs.Router.ServeHTTP(responseDelete, req)
+	assert.Equal(t, http.StatusOK, responseDelete.Code)
+
+	filename := fmt.Sprintf("chartas/%s.png", id)
+	err = os.Remove(filename)
+	if err != nil {
+		return
 	}
 
 }
