@@ -9,13 +9,11 @@ import (
 )
 
 func createBlackImage(width, height int) *image.NRGBA {
-	buf1 := make([]uint8, height*width*4)
+	img := image.NewNRGBA(image.Rect(0, 0, width, height))
 	var i int64
 	for i = 3; i <= int64(height*width*4); i += 4 {
-		buf1[i] = 255
+		img.Pix[i] = 255
 	}
-	img := image.NewNRGBA(image.Rect(0, 0, width, height))
-	img.Pix = buf1
 	img.Stride = 4 * width
 
 	return img
