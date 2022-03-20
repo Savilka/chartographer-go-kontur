@@ -502,12 +502,6 @@ func TestAddFragmentEndpoint(t *testing.T) {
 		if err != nil {
 			fmt.Println(err)
 		}
-		file1, _ := os.Create("1.bmp")
-		file2, _ := os.Create("2.bmp")
-
-		img, _ := bmp.Decode(bytes.NewReader(responseGet.Body.Bytes()))
-		bmp.Encode(file1, &chartaImgLocal)
-		bmp.Encode(file2, img)
 
 		eqCode := compareBmp(bufLocal.Bytes(), responseGet.Body.Bytes())
 		assert.Equal(t, 0, eqCode)
