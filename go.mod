@@ -1,11 +1,11 @@
-module main
+module chartographer-go-kontur
 
 go 1.18
 
 require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/gin-gonic/gin v1.7.7
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.7.1
 	go.etcd.io/bbolt v1.3.6
 	golang.org/x/image v0.0.0-20220302094943-723b81ca9867
 )
@@ -27,4 +27,5 @@ require (
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
