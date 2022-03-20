@@ -434,7 +434,7 @@ func (cs *ChartographerService) getFragmentEndpoint(c *gin.Context) {
 					fragmentOfChartaImg = imaging.Crop(chartaImg, image.Rect(x, 0, charta.Width, fragment.Height+y))
 					draw.Draw(fragmentImgBg, image.Rectangle{
 						Min: image.Point{X: 0, Y: -y},
-						Max: image.Point{X: charta.Width + x, Y: fragment.Height},
+						Max: image.Point{X: charta.Width - x, Y: fragment.Height},
 					}, fragmentOfChartaImg, image.Point{}, draw.Over)
 					break
 				} else {
