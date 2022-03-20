@@ -1,4 +1,4 @@
-module github.com/savilka/chartographer-go-kontur
+module github.com/Savilka/chartographer-go-kontur
 
 go 1.18
 
