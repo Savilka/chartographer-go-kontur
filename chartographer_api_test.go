@@ -47,7 +47,6 @@ func TestCreateChartaEndpoint(t *testing.T) {
 		{Width: 1, Height: 1},
 		{Width: 1000, Height: 1000},
 		{Width: 20000, Height: 50000},
-		{Width: 20000, Height: 50000},
 	}
 
 	testCasesBadRequest := []chartaTest{
@@ -66,6 +65,19 @@ func TestCreateChartaEndpoint(t *testing.T) {
 		response := httptest.NewRecorder()
 		cs.Router.ServeHTTP(response, req)
 		assert.Equal(t, http.StatusCreated, response.Code)
+
+		buf := new(bytes.Buffer)
+		_, err := buf.ReadFrom(response.Body)
+		if err != nil {
+			return
+		}
+		id := buf.String()
+
+		url = fmt.Sprintf("/chartas/%s/", id)
+		req, _ = http.NewRequest("DELETE", url, nil)
+		responseDelete := httptest.NewRecorder()
+		cs.Router.ServeHTTP(responseDelete, req)
+		assert.Equal(t, http.StatusOK, responseDelete.Code)
 	}
 
 	for _, testCase := range testCasesBadRequest {
@@ -145,6 +157,7 @@ func TestGetFragmentEndpoint(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	fragmentRed, err := png.Decode(fragmentRedFile)
 	if err != nil {
 		fmt.Println(err)
@@ -303,6 +316,14 @@ func TestGetFragmentEndpoint(t *testing.T) {
 		cs.Router.ServeHTTP(response, req)
 		assert.Equal(t, http.StatusBadRequest, response.Code)
 	}
+
+	_ = fragmentRedFile.Close()
+
+	url = fmt.Sprintf("/chartas/%s/", id)
+	req, _ = http.NewRequest("DELETE", url, nil)
+	responseDelete := httptest.NewRecorder()
+	cs.Router.ServeHTTP(responseDelete, req)
+	assert.Equal(t, http.StatusOK, responseDelete.Code)
 }
 
 func TestAddFragmentEndpoint(t *testing.T) {
