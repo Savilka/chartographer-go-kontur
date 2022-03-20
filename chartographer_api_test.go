@@ -65,35 +65,6 @@ func TestCreateChartaEndpoint(t *testing.T) {
 		response := httptest.NewRecorder()
 		cs.Router.ServeHTTP(response, req)
 		assert.Equal(t, http.StatusCreated, response.Code)
-
-		buf := new(bytes.Buffer)
-		_, err := buf.ReadFrom(response.Body)
-		if err != nil {
-			return
-		}
-		id := buf.String()
-
-		filename := fmt.Sprintf("chartas/%s.png", id)
-		file, err := os.Open(filename)
-		if err != nil {
-			return
-		}
-
-		img, err := png.Decode(file)
-		if err != nil {
-			return
-		}
-
-		_ = file.Close()
-
-		assert.Equal(t, testCase.Width, img.Bounds().Dx())
-		assert.Equal(t, testCase.Height, img.Bounds().Dy())
-
-		err = os.Remove(filename)
-		if err != nil {
-			return
-		}
-
 	}
 
 	for _, testCase := range testCasesBadRequest {
