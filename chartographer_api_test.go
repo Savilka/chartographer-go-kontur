@@ -331,7 +331,7 @@ func TestDeleteFragmentEndpoint(t *testing.T) {
 	filename := fmt.Sprintf("chartas/%s.png", id)
 	_, err = os.Open(filename)
 
-	errString := fmt.Sprintf("open chartas/%s.png: The system cannot find the file specified.", id)
+	errString := fmt.Sprintf("open chartas/%s.png: no such file or directory", id)
 	assert.Equal(t, errString, err.Error())
 
 }
