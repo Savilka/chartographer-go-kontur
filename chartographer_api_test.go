@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/image/bmp"
+	"image"
+	"image/draw"
 	"image/png"
 	"net/http"
 	"net/http/httptest"
@@ -26,7 +29,7 @@ type chartaTest struct {
 var cs ChartographerService
 
 func TestMain(m *testing.M) {
-	cs.Initialize("", "test.db")
+	cs.Initialize(".", "test.db")
 	code := m.Run()
 	err := cs.DB.Close()
 	if err != nil {
@@ -108,47 +111,227 @@ func TestCreateChartaEndpoint(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, responseBadUrl.Code)
 }
 
-//func TestGetFragmentEndpoint(t *testing.T) {
-//	testCasesOK := []fragmentTest{
-//		{X: -25, Y: -25, Width: 50, Height: 50},   // 9
-//		{X: -25, Y: -25, Width: 50, Height: 150},  // 10
-//		{X: -25, Y: -25, Width: 150, Height: 50},  // 11
-//		{X: 25, Y: -25, Width: 50, Height: 50},    // 12
-//		{X: 75, Y: -25, Width: 50, Height: 50},    // 13
-//		{X: 25, Y: -25, Width: 150, Height: 150},  // 14
-//		{X: 25, Y: -25, Width: 50, Height: 150},   // 15
-//		{X: -25, Y: 25, Width: 50, Height: 50},    // 16
-//		{X: -25, Y: 75, Width: 50, Height: 50},    // 17
-//		{X: -25, Y: 75, Width: 150, Height: 50},   // 18
-//		{X: -25, Y: 25, Width: 150, Height: 50},   // 19
-//		{X: 25, Y: 25, Width: 50, Height: 50},     // 20
-//		{X: 25, Y: 25, Width: 150, Height: 50},    // 21
-//		{X: 25, Y: 25, Width: 50, Height: 150},    // 22
-//		{X: 25, Y: 25, Width: 150, Height: 150},   // 23
-//		{X: -25, Y: -25, Width: 150, Height: 150}, // 24
-//	}
-//
-//	testCasesBadReq := []fragmentTest{
-//		{X: -100, Y: -100, Width: 50, Height: 50}, // 1
-//		{X: 40, Y: -60, Width: 50, Height: 50},    // 2
-//		{X: 150, Y: -100, Width: 50, Height: 50},  // 3
-//		{X: -100, Y: 50, Width: 50, Height: 50},   // 4
-//		{X: -100, Y: 150, Width: 50, Height: 50},  // 5
-//		{X: 150, Y: 40, Width: 50, Height: 50},    // 6
-//		{X: 150, Y: 150, Width: 50, Height: 50},   // 7
-//		{X: 40, Y: 150, Width: 50, Height: 50},    // 8
-//	}
-//
-//	for _, testCase := range testCasesOK {
-//
-//		fragmentBg := createBlackImage(testCase.Width, testCase.Height)
-//	}
-//
-//	for _, testCase := range testCasesBadReq {
-//
-//		fragmentBg := createBlackImage(testCase.Width, testCase.Height)
-//	}
-//}
+func TestGetFragmentEndpoint(t *testing.T) {
+	testCasesOK := []fragmentTest{
+		{X: -25, Y: -25, Width: 50, Height: 50},   // 9
+		{X: -25, Y: -25, Width: 50, Height: 150},  // 10
+		{X: -25, Y: -25, Width: 150, Height: 50},  // 11
+		{X: 25, Y: -25, Width: 50, Height: 50},    // 12
+		{X: 75, Y: -25, Width: 50, Height: 50},    // 13
+		{X: 25, Y: -25, Width: 150, Height: 150},  // 14
+		{X: 25, Y: -25, Width: 50, Height: 150},   // 15
+		{X: -25, Y: 25, Width: 50, Height: 50},    // 16
+		{X: -25, Y: 75, Width: 50, Height: 50},    // 17
+		{X: -25, Y: 75, Width: 150, Height: 50},   // 18
+		{X: -25, Y: 25, Width: 150, Height: 50},   // 19
+		{X: 25, Y: 25, Width: 50, Height: 50},     // 20
+		{X: 25, Y: 25, Width: 150, Height: 50},    // 21
+		{X: 25, Y: 25, Width: 50, Height: 150},    // 22
+		{X: 25, Y: 25, Width: 150, Height: 150},   // 23
+		{X: -25, Y: -25, Width: 150, Height: 150}, // 24
+	}
+
+	testCasesBadReq := []fragmentTest{
+		{X: -100, Y: -100, Width: 50, Height: 50}, // 1
+		{X: 40, Y: -60, Width: 50, Height: 50},    // 2
+		{X: 150, Y: -100, Width: 50, Height: 50},  // 3
+		{X: -100, Y: 50, Width: 50, Height: 50},   // 4
+		{X: -100, Y: 150, Width: 50, Height: 50},  // 5
+		{X: 150, Y: 40, Width: 50, Height: 50},    // 6
+		{X: 150, Y: 150, Width: 50, Height: 50},   // 7
+		{X: 40, Y: 150, Width: 50, Height: 50},    // 8
+	}
+
+	url := fmt.Sprintf("/chartas/?width=%d&height=%d", 100, 100)
+	req, _ := http.NewRequest("POST", url, nil)
+	responseCreate := httptest.NewRecorder()
+	cs.Router.ServeHTTP(responseCreate, req)
+	assert.Equal(t, http.StatusCreated, responseCreate.Code)
+
+	buf := new(bytes.Buffer)
+	_, err := buf.ReadFrom(responseCreate.Body)
+	if err != nil {
+		return
+	}
+	id := buf.String()
+
+	blackFragment := createRedImage(100, 100)
+	buf = new(bytes.Buffer)
+	err = bmp.Encode(buf, blackFragment)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	url = fmt.Sprintf("/chartas/%s/?x=%d&y=%d&width=%d&height=%d", id, 0, 0, 100, 100)
+	req, _ = http.NewRequest("POST", url, buf)
+	responseAdd := httptest.NewRecorder()
+	cs.Router.ServeHTTP(responseAdd, req)
+	assert.Equal(t, http.StatusOK, responseAdd.Code)
+
+	filename := fmt.Sprintf("chartas/%s.png", id)
+	fragmentRedFile, err := os.Open(filename)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fragmentRed, err := png.Decode(fragmentRedFile)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for _, testCase := range testCasesOK {
+
+		fragmentBlack := createBlackImage(testCase.Width, testCase.Height)
+		switch {
+		case testCase.X < 0 && testCase.Y < 0:
+			//case 24
+			if testCase.Width-testCase.X >= 100 && testCase.Height-testCase.Y >= 100 {
+				draw.Draw(fragmentBlack, image.Rectangle{
+					Min: image.Point{X: -testCase.X, Y: -testCase.Y},
+					Max: image.Point{X: -testCase.X + 100, Y: -testCase.Y + 100},
+				}, fragmentRed, image.Point{}, draw.Over)
+				break
+			}
+
+			if testCase.Height+testCase.Y <= 100 {
+				if testCase.Width-testCase.X > 100 {
+					//case 11
+					draw.Draw(fragmentBlack, image.Rectangle{
+						Min: image.Point{X: -testCase.X, Y: -testCase.Y},
+						Max: image.Point{X: -testCase.X + testCase.Width, Y: testCase.Height},
+					}, fragmentRed, image.Point{}, draw.Over)
+					break
+				} else {
+					//case 9
+					draw.Draw(fragmentBlack, image.Rectangle{
+						Min: image.Point{X: -testCase.X, Y: -testCase.Y},
+						Max: image.Point{X: -testCase.X + testCase.Width, Y: testCase.Height},
+					}, fragmentRed, image.Point{}, draw.Over)
+					break
+				}
+			} else {
+				//case 10
+				draw.Draw(fragmentBlack, image.Rectangle{
+					Min: image.Point{X: -testCase.X, Y: -testCase.Y},
+					Max: image.Point{X: testCase.Width, Y: 100 - testCase.Y},
+				}, fragmentRed, image.Point{}, draw.Over)
+				break
+			}
+
+		case testCase.X >= 0 && testCase.Y < 0:
+
+			if testCase.Height+testCase.Y <= 100 {
+				if testCase.X+testCase.Width > 100 {
+					//case 13
+					draw.Draw(fragmentBlack, image.Rectangle{
+						Min: image.Point{X: 0, Y: -testCase.Y},
+						Max: image.Point{X: 100 - testCase.X, Y: testCase.Height},
+					}, fragmentRed, image.Point{}, draw.Over)
+					break
+				} else {
+					//case 12
+					draw.Draw(fragmentBlack, image.Rectangle{
+						Min: image.Point{X: 0, Y: -testCase.Y},
+						Max: image.Point{X: testCase.Width, Y: testCase.Height},
+					}, fragmentRed, image.Point{}, draw.Over)
+					break
+				}
+			} else {
+				//case 14 and 15
+				draw.Draw(fragmentBlack, image.Rectangle{
+					Min: image.Point{X: 0, Y: -testCase.Y},
+					Max: image.Point{X: 100 - testCase.X, Y: 100 - testCase.Y},
+				}, fragmentRed, image.Point{}, draw.Over)
+				break
+			}
+
+		case testCase.X < 0 && testCase.Y >= 0:
+
+			if testCase.Width+testCase.X <= 100 {
+				if testCase.Height+testCase.Y >= 100 {
+					//case 17
+					draw.Draw(fragmentBlack, image.Rectangle{
+						Min: image.Point{X: -testCase.X, Y: 0},
+						Max: image.Point{X: testCase.Width, Y: 100 - testCase.Y},
+					}, fragmentRed, image.Point{}, draw.Over)
+					break
+				} else {
+					//case 16
+					draw.Draw(fragmentBlack, image.Rectangle{
+						Min: image.Point{X: -testCase.X, Y: 0},
+						Max: image.Point{X: testCase.Width, Y: testCase.Height},
+					}, fragmentRed, image.Point{}, draw.Over)
+					break
+				}
+			} else {
+				//case 18 and 19
+				draw.Draw(fragmentBlack, image.Rectangle{
+					Min: image.Point{X: -testCase.X, Y: 0},
+					Max: image.Point{X: 100 - testCase.X, Y: 100 - testCase.Y},
+				}, fragmentRed, image.Point{}, draw.Over)
+				break
+			}
+
+		case testCase.X >= 0 && testCase.Y >= 0:
+
+			//case 20
+			if testCase.Width+testCase.X <= 100 && testCase.Height+testCase.Y <= 100 {
+				draw.Draw(fragmentBlack, image.Rectangle{
+					Min: image.Point{X: 0, Y: 0},
+					Max: image.Point{X: testCase.Width, Y: testCase.Height},
+				}, fragmentRed, image.Point{}, draw.Over)
+				break
+			} else {
+				if testCase.Width+testCase.X >= 100 && testCase.Height+testCase.Y >= 100 {
+					//case 23
+					draw.Draw(fragmentBlack, image.Rectangle{
+						Min: image.Point{X: 0, Y: 0},
+						Max: image.Point{X: 100 - testCase.X, Y: 100 - testCase.Y},
+					}, fragmentRed, image.Point{}, draw.Over)
+					break
+				} else {
+					if testCase.Width+testCase.X >= 100 {
+						//case 21
+						draw.Draw(fragmentBlack, image.Rectangle{
+							Min: image.Point{X: 0, Y: 0},
+							Max: image.Point{X: 100 - testCase.X, Y: testCase.Height},
+						}, fragmentRed, image.Point{}, draw.Over)
+						break
+					} else {
+						//case 22
+						draw.Draw(fragmentBlack, image.Rectangle{
+							Min: image.Point{X: 0, Y: 0},
+							Max: image.Point{X: testCase.Width, Y: 100 - testCase.X},
+						}, fragmentRed, image.Point{}, draw.Over)
+						break
+					}
+				}
+			}
+		}
+
+		url = fmt.Sprintf("/chartas/%s/?x=%d&y=%d&width=%d&height=%d", id, testCase.X, testCase.Y, testCase.Width, testCase.Height)
+		req, _ = http.NewRequest("GET", url, nil)
+		responseGet := httptest.NewRecorder()
+		cs.Router.ServeHTTP(responseGet, req)
+		assert.Equal(t, http.StatusOK, responseAdd.Code)
+
+		bufLocal := new(bytes.Buffer)
+		err = bmp.Encode(bufLocal, fragmentBlack)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		eqCode := compareBmp(bufLocal.Bytes(), responseGet.Body.Bytes())
+		assert.Equal(t, 0, eqCode)
+	}
+
+	for _, testCase := range testCasesBadReq {
+		url := fmt.Sprintf("/chartas/%s/?x=%d&y=%d&width=%d&height=%d", id, testCase.X, testCase.Y, testCase.Width, testCase.Height)
+		req, _ := http.NewRequest("GET", url, nil)
+		response := httptest.NewRecorder()
+		cs.Router.ServeHTTP(response, req)
+		assert.Equal(t, http.StatusBadRequest, response.Code)
+	}
+}
 
 func TestAddFragmentEndpoint(t *testing.T) {
 
@@ -180,4 +363,32 @@ func TestDeleteFragmentEndpoint(t *testing.T) {
 	errString := fmt.Sprintf("open chartas/%s.png: The system cannot find the file specified.", id)
 	assert.Equal(t, errString, err.Error())
 
+}
+
+func createRedImage(width, height int) *image.NRGBA {
+	buf := make([]uint8, height*width*4)
+	var i int64
+	for i = 3; i <= int64(height*width*4); i += 4 {
+		buf[i] = 255
+		buf[i-3] = 255
+	}
+	img := image.NewNRGBA(image.Rect(0, 0, width, height))
+	img.Pix = buf
+	img.Stride = 4 * width
+
+	return img
+}
+
+func compareBmp(bytes1, bytes2 []byte) int {
+	if len(bytes1) != len(bytes2) {
+		return -1
+	}
+
+	for i := 0; i < len(bytes1); i++ {
+		if bytes1[i] != bytes2[i] {
+			return i
+		}
+	}
+
+	return 0
 }
